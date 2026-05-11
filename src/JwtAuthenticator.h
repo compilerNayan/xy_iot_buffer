@@ -3,6 +3,7 @@
 #include <vector>
 #include <sstream>
 #include <algorithm>
+#include <ctime>
 #include <ArduinoJson.h>
 
 #ifdef ARDUINO
@@ -18,6 +19,8 @@
 
 class JwtAuthenticator {
 private:
+    static constexpr long long MIN_VALID_UNIX_TIME = 946684800; // 2000-01-01 UTC
+
     const char* publicKeyPem = R"(-----BEGIN PUBLIC KEY-----
 MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwpYzGK2w+VNbxcyZIOi5
 nkSD3hub3jTM6hMVFTvqvI2HWnB780UUq+iT1fugyEuZ/w0KdAaxlI8hwPPTM9pb
@@ -139,6 +142,60 @@ UwIDAQAB
 #endif
     }
 
+    bool parseInt64Claim(const JsonVariantConst& value, long long& out) {
+        if (value.is<long long>()) {
+            out = value.as<long long>();
+            return true;
+        }
+        if (value.is<const char*>()) {
+            const char* raw = value.as<const char*>();
+            if (raw == nullptr || *raw == '\0') return false;
+            char* end = nullptr;
+            long long parsed = strtoll(raw, &end, 10);
+            if (end == raw || *end != '\0') return false;
+            out = parsed;
+            return true;
+        }
+        return false;
+    }
+
+    bool validateTimeClaims(const JsonDocument& doc, std::string& error) {
+        const long long nowUtc = static_cast<long long>(time(nullptr));
+        if (nowUtc < MIN_VALID_UNIX_TIME) {
+            error = "Device time not set";
+            return false;
+        }
+
+        if (doc["exp"].isNull()) {
+            error = "Missing exp claim";
+            return false;
+        }
+
+        long long exp = 0;
+        if (!parseInt64Claim(doc["exp"], exp)) {
+            error = "Invalid exp claim";
+            return false;
+        }
+        if (nowUtc >= exp) {
+            error = "Token expired";
+            return false;
+        }
+
+        if (!doc["nbf"].isNull()) {
+            long long nbf = 0;
+            if (!parseInt64Claim(doc["nbf"], nbf)) {
+                error = "Invalid nbf claim";
+                return false;
+            }
+            if (nowUtc < nbf) {
+                error = "Token not active yet";
+                return false;
+            }
+        }
+
+        return true;
+    }
+
 public:
     std::map<std::string, std::string> authenticate(const std::string& bearerToken) {
         std::map<std::string, std::string> claims;
@@ -166,6 +223,13 @@ public:
         if (err) {
             claims["error"] = "Failed to parse payload";
             printMessage("Failed to parse payload");
+            return claims;
+        }
+
+        std::string timeError;
+        if (!validateTimeClaims(doc, timeError)) {
+            claims["error"] = timeError;
+            printMessage(timeError);
             return claims;
         }
 

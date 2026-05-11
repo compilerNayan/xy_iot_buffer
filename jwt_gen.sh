@@ -8,7 +8,9 @@ PRIVATE_KEY="${SCRIPT_DIR}/test_private.pem"
 HEADER='{"alg":"RS256","typ":"JWT"}'
 
 # JWT payload (JSON) - add any claims you want
-PAYLOAD='{"sub":"1234567890","name":"Test User","role":"admin","iat":'"$(date +%s)"'}'
+NOW_TS="$(date +%s)"
+EXP_TS="$((NOW_TS + 180))"
+PAYLOAD='{"sub":"1234567890","name":"Test User","role":"admin","iat":'"${NOW_TS}"',"exp":'"${EXP_TS}"'}'
 
 # Function: base64url encode
 base64url_encode() {

@@ -66,7 +66,7 @@ void setup() {
 void loop() {
     Serial.println("loopxe");
     JwtAuthenticator auth;
-    auto claims = auth.authenticate("Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IlRlc3QgVXNlciIsInJvbGUiOiJhZG1pbiIsImlhdCI6MTc3ODQ5ODA5OSwiZXhwIjoxNzc4NDk4Mjc5fQ.nJtvioVJtZmIxDLEhWW4GpUQCSc_AF_-bEtC9TtHaPfg7ckjvTgY44wprBq8b5t5JPfYh4SRVlcvHqRIJnzTcTU7GNBJGDl1fmRViWP69o-JsckyDH1kCuGgwHaSPizpxEsTtZPO2NbzSo8QCFSa7y5E8F2I2d-DvSPxGWQUOR63Rt77NgtexsEygALiSx_sviCkwqp9Adwvq8lc0IcAzF7LJjLV4vA8YJ5M3b3pHx8aMH87XWo1jOvhqx14hnujsCmlazOvhCaCS18ptUqDTkgPdBzmL-Mvc4ItF8Wvp998FBFJzc30z1L6EmHLqYqRnR2VuTnIJRLUem27zN4JHw");
+    auto claims = auth.authenticate("Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IlRlc3QgVXNlciIsInJvbGUiOiJhZG1pbiIsImlhdCI6MTc3ODQ5ODkyNywiZXhwIjoxNzc4NDk5MTA3fQ.op9JPZugDCdgsBHZ2WtkKXOBX6HIeFRZE2VMy2wrRsdXKLJSIMSt2U-cBFJV4Vg2chNfVN8jo4EJQCsNV_HNa2PmIpgmG-Fjn_ksj8foi88hiEU-1xuKubirqMNWlk3Hj2P0UIW5E2iEb72l4h9cxtrp1JVuYfYyfT13dUF_uTvTQ1RtU2lSx1jC82X3ZgqSO8ReNHqmrvsvVnZX-z79zTWAQK7bBSuFtocY7O0YtRIR8MXonpnDyL8nZeHuuRy8I-bigyJbKvuIqMlxnODqliLsgE_BkVFI71_LXIaM2yC-PPMhHZXbv8mFkaCdplbwbmRtJBpG0kP4iVycALRpOw");
 
     if (claims.find("error") != claims.end()) {
         Serial.println(("Error: " + claims["error"]).c_str());

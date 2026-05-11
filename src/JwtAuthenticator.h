@@ -17,6 +17,8 @@
   #include <openssl/bio.h>
 #endif
 
+#include "JwtAuthenticationToken.h"
+
 class JwtAuthenticator {
 private:
     static constexpr long long MIN_VALID_UNIX_TIME = 946684800; // 2000-01-01 UTC
@@ -197,47 +199,63 @@ UwIDAQAB
     }
 
 public:
-    std::map<std::string, std::string> authenticate(const std::string& bearerToken) {
-        std::map<std::string, std::string> claims;
+    JwtAuthenticationToken authenticate(const std::string& bearerToken) {
+        JwtAuthenticationToken token;
+
         std::string jwt = bearerToken;
         if (jwt.rfind("Bearer ", 0) == 0) jwt = jwt.substr(7);
 
         auto parts = splitJwt(jwt);
         if (parts.size() != 3) {
-            claims["error"] = "Invalid JWT format";
-            printMessage("Invalid JWT format");
-            return claims;
+            token.claims["error"] = "Invalid JWT format";
+            return token;
         }
 
         std::string headerPayload = parts[0] + "." + parts[1];
         if (!verifySignature(headerPayload, parts[2])) {
-            claims["error"] = "Invalid signature";
-            printMessage("Invalid signature");
-            return claims;
+            token.claims["error"] = "Invalid signature";
+            return token;
         }
 
         std::string payloadJson = base64UrlDecode(parts[1]);
-
         DynamicJsonDocument doc(1024);
         auto err = deserializeJson(doc, payloadJson);
         if (err) {
-            claims["error"] = "Failed to parse payload";
-            printMessage("Failed to parse payload");
-            return claims;
+            token.claims["error"] = "Failed to parse payload";
+            return token;
         }
 
         std::string timeError;
         if (!validateTimeClaims(doc, timeError)) {
-            claims["error"] = timeError;
-            printMessage(timeError);
-            return claims;
+            token.claims["error"] = timeError;
+            return token;
         }
 
         for (JsonPair kv : doc.as<JsonObject>()) {
-            claims[kv.key().c_str()] = kv.value().as<std::string>();
+            token.claims[kv.key().c_str()] = kv.value().as<std::string>();
         }
 
-        printMessage("JWT validated successfully");
-        return claims;
+        // Set principal (subject or deviceId)
+        if (token.claims.count("sub")) {
+            token.principal = token.claims["sub"];
+        } else if (token.claims.count("deviceId")) {
+            token.principal = token.claims["deviceId"];
+        }
+
+        // Extract authorities (roles/scopes)
+        if (token.claims.count("role")) {
+            token.authorities.push_back("ROLE_" + token.claims["role"]);
+        }
+        if (token.claims.count("roles")) {
+            // If roles is a comma-separated string
+            std::stringstream ss(token.claims["roles"]);
+            std::string role;
+            while (std::getline(ss, role, ',')) {
+                token.authorities.push_back("ROLE_" + role);
+            }
+        }
+
+        token.authenticated = true;
+        return token;
     }
 };

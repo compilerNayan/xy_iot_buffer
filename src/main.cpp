@@ -66,12 +66,15 @@ void setup() {
 void loop() {
     Serial.println("loopxe");
     JwtAuthenticator auth;
-    auto claims = auth.authenticate("Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IlRlc3QgVXNlciIsInJvbGUiOiJhZG1pbiIsImlhdCI6MTc3ODQ5ODkyNywiZXhwIjoxNzc4NDk5MTA3fQ.op9JPZugDCdgsBHZ2WtkKXOBX6HIeFRZE2VMy2wrRsdXKLJSIMSt2U-cBFJV4Vg2chNfVN8jo4EJQCsNV_HNa2PmIpgmG-Fjn_ksj8foi88hiEU-1xuKubirqMNWlk3Hj2P0UIW5E2iEb72l4h9cxtrp1JVuYfYyfT13dUF_uTvTQ1RtU2lSx1jC82X3ZgqSO8ReNHqmrvsvVnZX-z79zTWAQK7bBSuFtocY7O0YtRIR8MXonpnDyL8nZeHuuRy8I-bigyJbKvuIqMlxnODqliLsgE_BkVFI71_LXIaM2yC-PPMhHZXbv8mFkaCdplbwbmRtJBpG0kP4iVycALRpOw");
+    auto authToken = auth.authenticate("Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IlRlc3QgVXNlciIsInJvbGUiOiJhZG1pbiIsImlhdCI6MTc3ODUwMjk1NiwiZXhwIjoxNzc4NTAzMTM2fQ.TNjxF7ZgJLycNXOvZLW3sNjZuSHfskZCMkInQY36CfmnuPhgdQU-eQwrpl0xtrmj-7peZwp28EuSdu34glf8wv0Ja_COCtwzfUeNa6IgfH9EjkmYCswQjplcpftaRKKygMrS-0JNRb3jswiETM0Ihlwcc4D008x3xrS0lqDBViajTmu2tmFC51dK0aiqJKvlDC-2dFxkNj28HkCJGGUtpt2nb8mtrhxzv5WtT66paBLAEE8VhJoCeQbSHeynK7W7sLTAExm0h1MEmtCmWX2a4a-4vOla7wMALnksZn-GvHNYpeIzK-YhpOHhyOQSn9WKLyX153MV-CixBbbk48m2Vw");
 
-    if (claims.find("error") != claims.end()) {
-        Serial.println(("Error: " + claims["error"]).c_str());
+    if (!authToken.authenticated) {
+        const auto errIt = authToken.claims.find("error");
+        const std::string err = (errIt != authToken.claims.end()) ? errIt->second : "Authentication failed";
+        Serial.println(("Error: " + err).c_str());
     } else {
         Serial.println("JWT validated successfully");
+        Serial.println(("Principal: " + authToken.principal).c_str());
     }
 
     delay(5000); // avoid spamming

@@ -1,3 +1,4 @@
+#ifdef XXMM
 #include "esp_system.h"
 #include "esp_heap_caps.h"
 #include "freertos/FreeRTOS.h"
@@ -49,3 +50,4 @@ extern "C" void app_main() {
         vTaskDelay(pdMS_TO_TICKS(1000)); // sleep 1s
     }
 }
+#endif
